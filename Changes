@@ -1,0 +1,6 @@
+Revision history for Perl extension App::MakeFileOrder.
+
+0.01  Sat Jan 15 22:35:32 2011
+    - original version; created by h2xs 1.23 with options
+        -XAn App::MakeFileOrder
+
