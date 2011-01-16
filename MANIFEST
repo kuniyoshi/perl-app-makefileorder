@@ -2,6 +2,7 @@ Changes
 Makefile.PL
 MANIFEST
 README
+t/prereq.t
 t/use.t
 t/can.t
 t/new.t

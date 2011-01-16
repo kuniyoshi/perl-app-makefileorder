@@ -14,7 +14,10 @@ DEPENDENCIES
 
 This module requires these other modules and libraries:
 
-  blah blah blah
+  - Readonly
+  - Class::Accessor
+  - Path::Class
+  - List::MoreUtils
 
 COPYRIGHT AND LICENCE
 
