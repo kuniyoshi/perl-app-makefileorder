@@ -2,5 +2,8 @@ Changes
 Makefile.PL
 MANIFEST
 README
-t/App-MakeFileOrder.t
+t/use.t
+t/can.t
+t/new.t
 lib/App/MakeFileOrder.pm
+
