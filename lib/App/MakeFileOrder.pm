@@ -8,7 +8,7 @@ use Path::Class ( );
 use Readonly;
 use List::MoreUtils qw( first_index );
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 Readonly my @FIELDS  => qw( mode  verbose  dry_run  dir  order );
 Readonly my %DEFAULT => (
