@@ -45,6 +45,9 @@ sub move {
     my $self  = shift;
     my %param = @_;
 
+    return
+        if $param{to} eq $param{from};
+
     my @commands = $self->mode eq "plain" ? qw( mv )
                                           : $self->mode eq "git" ? qw( git mv )
                                                                  : ( );
