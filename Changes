@@ -1,5 +1,10 @@
 Revision history for Perl extension App::MakeFileOrder.
 
+0.03  Sun Mar  6 12:09:00 2011
+    - Sorry, change main method name from 'rename' to 'order'.
+      i want to make method that was named unorder.
+    - Add a few initiation restriction.
+    - Grep target files are .t file.
 0.02  Sat Jan 22 21:39:51 2011
     - Don't rename if both the files are same, it will occur
       when those files are in the git repository.

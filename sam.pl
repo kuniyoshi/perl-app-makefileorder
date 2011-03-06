@@ -18,10 +18,10 @@ my @order_list = grep { $_ !~ m{\A \s* [#] }msx }
 App::MakeFileOrder->new(
     mode    => "git",
     dir     => "sample",
-    order   => \@order_list,
+    index   => \@order_list,
     verbose => 1,
-    dry_run => 0,
-)->rename;
+    dry_run => 1,
+)->order;
 
 __DATA__
 prereq.t

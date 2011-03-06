@@ -7,14 +7,22 @@ use base "Class::Accessor";
 use Path::Class ( );
 use Readonly;
 use List::MoreUtils qw( first_index );
+use Scalar::Util qw( blessed );
+use File::Basename qw( fileparse );
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 
-Readonly my @FIELDS  => qw( mode  verbose  dry_run  dir  order );
-Readonly my %DEFAULT => (
+Readonly my @FIELDS        => qw( mode  verbose  dry_run  dir  index );
+Readonly my %DEFAULT       => (
+    dir     => ".",
     mode    => "plain",
     verbose => 0,
     dry_run => 0,
+);
+Readonly my $SUFFIX        => ".t";
+Readonly my %MOVE_COMMANDS => (
+    plain => [ qw( mv ) ],
+    git   => [ qw( git mv ) ],
 );
 
 __PACKAGE__->mk_accessors( @FIELDS );
@@ -33,7 +41,16 @@ sub new {
 
     my $self = $class->SUPER::new( \%param );
 
-    $self->dir( Path::Class::dir( $self->dir ) );
+    croak "Could not understand the mode[", $self->mode, "]."
+        unless exists $MOVE_COMMANDS{ $self->mode };
+
+    if ( ! blessed $self->dir ) {
+        $self->dir( Path::Class::dir( $self->dir ) );
+    }
+    else {
+        croak "Dir should is a Path::Class."
+            unless $self->dir->isa( "Path::Class" );
+    }
 
     croak sprintf "No dir[%s] exists.", $self->dir->absolute
         unless -d $self->dir->absolute;
@@ -48,10 +65,6 @@ sub move {
     return
         if $param{to} eq $param{from};
 
-    my @commands = $self->mode eq "plain" ? qw( mv )
-                                          : $self->mode eq "git" ? qw( git mv )
-                                                                 : ( );
-
     if ( $self->verbose ) {
         printf "Rename from %s to %s.\n",
             $param{from}->relative,
@@ -59,21 +72,38 @@ sub move {
     }
 
     unless ( $self->dry_run ) {
-        system( @commands, $param{from}->relative, $param{to}->relative ) == 0
-            or die "Could not @commands.[$!]";
+        system(
+            @{ $MOVE_COMMANDS{ $self->mode } },
+            $param{from}->relative,
+            $param{to}->relative,
+        ) == 0
+            or die "Could not ", join( q{ }, @{ $MOVE_COMMANDS{ $self->mode } } ), ".[$!]";
     }
 
     return $self;
 }
 
-sub rename {
+sub is_test_file {
+    my $self = shift;
+    my $file = shift
+        or croak "File required.";
+
+    return
+        if $file->is_dir;
+
+    my( $name, $path, $suffix ) = fileparse $file->absolute, $SUFFIX;
+
+    return $suffix && $suffix eq $SUFFIX;
+}
+
+sub order {
     my $self = shift;
 
-    foreach my $file ( grep { ! $_->is_dir } $self->dir->children ) {
+    foreach my $file ( grep { $self->is_test_file( $_ ) } $self->dir->children ) {
         my $name = $file->basename;
-        $name =~ s{\A \d{2} [-] }{}msx;
+        $name =~ s{\A \d{2,3} [-] }{}msx;
 
-        my $index = first_index { $_ eq $name } @{ $self->order };
+        my $index = first_index { $_ eq $name } @{ $self->index };
         $index++;
 
         $name = $self->dir->file( sprintf "%02d-%s", $index, $name );
@@ -84,27 +114,42 @@ sub rename {
     return $self;
 }
 
+sub unorder {
+    my $self = shift;
+
+    foreach my $file ( grep { $self->is_test_file( $_ ) } $self->dir->children ) {
+        my $name = $file->basename;
+        $name =~ s{\A \d{2,3} [-] }{}msx;
+
+        $name = $self->dir->file( $name );
+
+        $self->move( from => $file, to => $name );
+    }
+
+    return $self;
+}
+
 1;
+
 __END__
 =encoding utf-8
 
 =head1 NAME
 
-App::MakeFileOrder - Perl extension for test files make order.
+App::MakeFileOrder - Perl extension for making test files order
 
 =head1 SYNOPSIS
 
   use App::MakeFileOrder;
 
-  my @order_list = qw(
+  my @index_list = qw(
       prereq.t  use.t  can.t  new.t
   );
 
   App::MakeFileOrder->new(
-      dir   => "t",
-      order => \@order_list,
+      index => \@index_list,
       mode  => "git",
-  )->renmae;
+  )->order;
 
 =head1 DESCRIPTION
 
